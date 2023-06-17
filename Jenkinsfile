@@ -15,7 +15,19 @@ pipeline{
     
         stage('checkout scm'){
             steps{
-                git branch: 'main', credentialsId: 'github', url: 'https://github.com/prajwal1691/complete-prodcution-e2e-pipeline'
+                git branch: 'main', credentialsId: 'github', url: 'https://github.com/prajwal1691/complete-prodcution-e2e-pipeline-new'
+            }
+        }
+
+        stage('Build Application'){
+            steps{
+                sh "mvn clean package"
+            }
+        }
+
+        stage('Test'){
+            steps{
+                sh "mvn test"
             }
         }
     }
