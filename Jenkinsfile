@@ -12,11 +12,10 @@ pipeline{
                 cleanWs()
             }
         }
-    }
-    stages{
+    
         stage('checkout scm'){
             steps{
-                git branch: 'main', credentialsId: 'github', url: 'https://github.com/prajwal1691/complete-prodcution-e2e-pipeline-new'
+                git branch: 'main', credentialsId: 'github', url: 'https://github.com/prajwal1691/complete-prodcution-e2e-pipeline'
             }
         }
     }
