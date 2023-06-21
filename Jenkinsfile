@@ -1,77 +1,24 @@
+@Library('jenkins_shared_lib') _
+
 pipeline{
-    agent{
-        label "jenkins-agent"
-    }
-    tools{
-        jdk 'Java17'
-        maven 'Maven3'
-    }
-    environment {
-        APP_NAME = "complete-prodcution-e2e-pipeline"
-        RELEASE = "1.0.0"
-        DOCKER_USER = "prajwal1691"
-        DOCKER_PASS = 'dockerhub'
-        IMAGE_NAME = "${DOCKER_USER}" + "/" + "${APP_NAME}"
-        IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
-    }
-
-
+    agent any
     stages{
-        stage('clean up workspace'){
+        stage('Git Checkout'){
             steps{
-                cleanWs()
-            }
-        }
-    
-        stage('checkout scm'){
-            steps{
-                git branch: 'main', credentialsId: 'github', url: 'https://github.com/prajwal1691/complete-prodcution-e2e-pipeline-new'
+                gitCheckout(
+                    branch: "main",
+                    url: "https://github.com/prajwal1691/complete-prodcution-e2e-pipeline-new.git"
+                )
             }
         }
 
-        stage('Build Application'){
+        stage('Unit Test Maven'){
             steps{
-                sh "mvn clean package"
-            }
-        }
-
-        stage('Test Application'){
-            steps{
-                sh "mvn test"
-            }
-        }
-
-        stage('Sonarqube Analysis'){
-            steps{
-                script {
-                    withSonarQubeEnv(credentialsId: 'jenkins-sonarqube-token') {
-                     sh "mvn sonar:sonar"
-                    }
+                script{
+                    mvnTest()
                 }
             }
         }
 
-        stage('Quality Gate'){
-            steps{
-                script {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'jenkins-sonarqube-token'
-                }
-            }
-        }
-
-        stage('Build & Push Docker Image'){
-            steps{
-                script {
-                    docker.withRegistry('',DOCKER_PASS) {
-                        docker_image = docker.build "${IMAGE_NAME}"
-                    }
-
-                    docker.withRegistry('',DOCKER_PASS) {
-                        docker_image.push("${IMAGE_TAG}")
-                        docker_image.push('latest')
-                    }  
-                }
-            }
-        }
     }
 }
