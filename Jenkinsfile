@@ -4,9 +4,9 @@ pipeline{
     agent {
         label 'jenkins-slave01'
     }
-    tools{
-        maven 'Maven-3.8.1'
-        jdk 'Java-11'
+    tools {
+        jdk 'Java17'
+        maven 'Maven3'
     }
     parameters{
         choice(name: 'action', choices: 'create\ndelete', description: 'choose create/Destroy')
