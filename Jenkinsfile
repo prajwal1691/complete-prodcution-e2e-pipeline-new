@@ -1,7 +1,7 @@
 @Library('jenkins_shared_lib') _
 
 pipeline{
-    agent any
+    agent jenkins-slave01
     parameters{
         choice(name: 'action', choices: 'create\ndelete', description: 'choose create/Destroy')
     }
