@@ -1,0 +1,111 @@
+@Library('jenkins_shared_lib') _
+
+pipeline{
+    agent {
+        label 'jenkins-slave01'
+    }
+    tools {
+        jdk 'Java17'
+        maven 'Maven3'
+    }
+    parameters{
+        choice(name: 'action', choices: 'create\ndelete', description: 'choose create/Destroy')
+        string(name: 'aws_account_id', description: 'AWS account Id', defaultValue: '457119571947')
+        string(name: 'Region', description: 'Refion of ECR', defaultValue: 'us-east-1')
+        string(name: 'ECR_REPO_NAME', description: 'name of the ECR', defaultValue: 'prajwal1691')
+    }
+    stages{
+        stage('Git Checkout'){
+            when { expression { params.action == 'create' }}
+            steps{
+                gitCheckout(
+                    branch: "main",
+                    url: "https://github.com/prajwal1691/complete-prodcution-e2e-pipeline-new.git"
+                )
+            }
+        }
+
+        stage('Unit Test Maven'){
+            when { expression { params.action == 'create' }}
+            steps{
+                script{
+                    mvnTest()
+                }
+            }
+        }
+
+        stage('Maven Integration Test'){
+            when { expression { params.action == 'create' }}
+            steps{
+                script{
+                    mvnIntegrationTest()
+                }
+            }
+        }
+
+        stage('Static Code Analysis: Sonarqube'){
+            when { expression { params.action == 'create' }}
+            steps{
+                script{
+                    def SonarQubecredentialsId = 'sonarqube-api'
+                    statiCodeAnalysis(SonarQubecredentialsId)
+                }
+            }
+        }
+
+        stage('Quality Gate Status Check: Sonarqube'){
+            when { expression { params.action == 'create' }}
+            steps{
+                script{
+                    def SonarQubecredentialsId = 'sonarqube-api'
+                    QualityGateStatus(SonarQubecredentialsId)
+                }
+            }
+        }
+
+        stage('Maven Build: Maven'){
+            when { expression { params.action == 'create' }}
+            steps{
+                script{
+                    mvnBuild()
+                }
+            }
+        }
+
+        stage('Docker Image Build: ECR'){
+            when { expression { params.action == 'create' }}
+            steps{
+                script{
+                    dockerBuild("${params.aws_account_id}","${params.Region}","${params.ECR_REPO_NAME}")
+                }
+            }
+        }
+
+        stage('Docker Image Scan'){
+            when { expression { params.action == 'create' }}
+            steps{
+                script{
+                    dockerImageScan("${params.aws_account_id}","${params.Region}","${params.ECR_REPO_NAME}")
+                }
+            }
+        }
+
+        stage('Docker Image Push'){
+            when { expression { params.action == 'create' }}
+            steps{
+                script{
+                    dockerImagePush("${params.aws_account_id}","${params.Region}","${params.ECR_REPO_NAME}")
+                }
+            }
+        }
+
+        stage('Docker Image Cleanup'){
+            when { expression { params.action == 'create' }}
+            steps{
+                script{
+                    dockerImageCleanup("${params.aws_account_id}","${params.Region}","${params.ECR_REPO_NAME}")
+                }
+            }
+        }
+    }
+}
